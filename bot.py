@@ -1,6 +1,9 @@
 from typing import List, Dict, Tuple
 
+import os
 from contact import *
+import pickle
+import json
 
 
 class Bot:
@@ -70,8 +73,30 @@ def parse_input(user_input: str) -> Tuple[str, List[str]]:
     return cmd, args
 
 
+def save_to_file(data, filename):
+    serializable_data = {key: record.to_dict() for key, record in data.items()}
+    with open(filename, 'w') as file:
+        json.dump(serializable_data, file)
+
+
+def load_from_file(filename):
+    try:
+        with open(filename, 'r') as file:
+            data = json.load(file)
+            bot = Bot()
+            bot.book.data =  {name: Record.from_dict(record_data) for name, record_data in data.items()}
+            return bot
+    except FileNotFoundError:
+        return {}
+
 def main():
-    bot = Bot()
+    filename = "cache"
+    bot = None
+    if os.path.exists(filename):
+        bot = load_from_file(filename)
+    else:
+        bot = Bot()
+
 
     while True:
         user_input = input("> ")
@@ -96,10 +121,13 @@ def main():
         elif command == "birthdays":
             bot.birthdays()
         elif command in ["close", "exit"]:
+            save_to_file(bot.book,filename)
             print("Good bye!")
             break
         else:
             print("Invalid command.")
+
+
 
 
 main()
